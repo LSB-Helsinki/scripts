@@ -61,6 +61,15 @@ def parse_args() -> argparse.Namespace:
         help="Sphere radius in angstroms for marker placement.",
     )
     parser.add_argument(
+        "--convention",
+        choices=("active", "passive"),
+        default="active",
+        help=(
+            "Rotation convention for reference point [0, 0, radius]: "
+            "active uses R @ v, passive uses R.T @ v."
+        ),
+    )
+    parser.add_argument(
         "--origin",
         type=float,
         nargs=3,
@@ -113,6 +122,43 @@ def parse_symmetry(sym_text: str) -> Tuple[int, int]:
 
 
 
+def apply_rotation(
+    rotation: Sequence[Sequence[float]],
+    vector: Sequence[float],
+    convention: str,
+) -> Point3D:
+    if convention == "active":
+        x = (
+            rotation[0][0] * vector[0]
+            + rotation[0][1] * vector[1]
+            + rotation[0][2] * vector[2]
+        )
+        y = (
+            rotation[1][0] * vector[0]
+            + rotation[1][1] * vector[1]
+            + rotation[1][2] * vector[2]
+        )
+        z = (
+            rotation[2][0] * vector[0]
+            + rotation[2][1] * vector[1]
+            + rotation[2][2] * vector[2]
+        )
+        return (x, y, z)
+
+    # passive convention: R.T @ vector
+    x = (
+        rotation[0][0] * vector[0]
+        + rotation[1][0] * vector[1]
+        + rotation[2][0] * vector[2]
+    )
+    y = (
+        rotation[0][1] * vector[0]
+        + rotation[1][1] * vector[1]
+        + rotation[2][1] * vector[2]
+    )
+    z = (
+        rotation[0][2] * vector[0]
+        + rotation[1][2] * vector[1]
 def apply_rotation(rotation: Sequence[Sequence[float]], vector: Sequence[float]) -> Point3D:
     x = (
         rotation[0][0] * vector[0]
@@ -137,6 +183,7 @@ def build_marker_positions(
     matrices: Iterable[Sequence[Sequence[float]]],
     radius: float,
     origin: Sequence[float],
+    convention: str,
 ) -> List[Point3D]:
     reference = (0.0, 0.0, radius)
     ox, oy, oz = origin
@@ -148,6 +195,7 @@ def build_marker_positions(
             [float(matrix[1][0]), float(matrix[1][1]), float(matrix[1][2])],
             [float(matrix[2][0]), float(matrix[2][1]), float(matrix[2][2])],
         ]
+        px, py, pz = apply_rotation(rotation, reference, convention)
         px, py, pz = apply_rotation(rotation, reference)
         points.append((px + ox, py + oy, pz + oz))
 
@@ -186,6 +234,18 @@ def main() -> int:
     sym_const, sym_n = parse_symmetry(args.sym)
     sym_matrices = getSymmetryMatrices(sym=sym_const, n=sym_n)
 
+    points = build_marker_positions(
+        sym_matrices,
+        args.radius,
+        args.origin,
+        args.convention,
+    )
+    cmm_text = to_cmm(args.set_name, points)
+    Path(args.output).write_text(cmm_text, encoding="utf-8")
+
+    print(
+        f"Wrote {len(points)} markers ({args.convention} convention) to {args.output}"
+    )
     points = build_marker_positions(sym_matrices, args.radius, args.origin)
     cmm_text = to_cmm(args.set_name, points)
     Path(args.output).write_text(cmm_text, encoding="utf-8")
