@@ -159,6 +159,20 @@ def apply_rotation(
     z = (
         rotation[0][2] * vector[0]
         + rotation[1][2] * vector[1]
+def apply_rotation(rotation: Sequence[Sequence[float]], vector: Sequence[float]) -> Point3D:
+    x = (
+        rotation[0][0] * vector[0]
+        + rotation[0][1] * vector[1]
+        + rotation[0][2] * vector[2]
+    )
+    y = (
+        rotation[1][0] * vector[0]
+        + rotation[1][1] * vector[1]
+        + rotation[1][2] * vector[2]
+    )
+    z = (
+        rotation[2][0] * vector[0]
+        + rotation[2][1] * vector[1]
         + rotation[2][2] * vector[2]
     )
     return (x, y, z)
@@ -182,6 +196,7 @@ def build_marker_positions(
             [float(matrix[2][0]), float(matrix[2][1]), float(matrix[2][2])],
         ]
         px, py, pz = apply_rotation(rotation, reference, convention)
+        px, py, pz = apply_rotation(rotation, reference)
         points.append((px + ox, py + oy, pz + oz))
 
     return points
@@ -231,6 +246,11 @@ def main() -> int:
     print(
         f"Wrote {len(points)} markers ({args.convention} convention) to {args.output}"
     )
+    points = build_marker_positions(sym_matrices, args.radius, args.origin)
+    cmm_text = to_cmm(args.set_name, points)
+    Path(args.output).write_text(cmm_text, encoding="utf-8")
+
+    print(f"Wrote {len(points)} markers to {args.output}")
     return 0
 
 
