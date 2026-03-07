@@ -44,7 +44,6 @@ I_GROUP_MAP = {
 }
 
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Convert Scipion symmetry operators into ChimeraX markers (.cmm)."
@@ -91,7 +90,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-
 def parse_symmetry(sym_text: str) -> Tuple[int, int]:
     sym = sym_text.strip().upper()
 
@@ -119,7 +117,6 @@ def parse_symmetry(sym_text: str) -> Tuple[int, int]:
     raise ValueError(
         "Unsupported symmetry string. Use I1-I8, T, O, Cn, or Dn (examples: I1, C6, D5)."
     )
-
 
 
 def apply_rotation(
@@ -159,24 +156,9 @@ def apply_rotation(
     z = (
         rotation[0][2] * vector[0]
         + rotation[1][2] * vector[1]
-def apply_rotation(rotation: Sequence[Sequence[float]], vector: Sequence[float]) -> Point3D:
-    x = (
-        rotation[0][0] * vector[0]
-        + rotation[0][1] * vector[1]
-        + rotation[0][2] * vector[2]
-    )
-    y = (
-        rotation[1][0] * vector[0]
-        + rotation[1][1] * vector[1]
-        + rotation[1][2] * vector[2]
-    )
-    z = (
-        rotation[2][0] * vector[0]
-        + rotation[2][1] * vector[1]
         + rotation[2][2] * vector[2]
     )
     return (x, y, z)
-
 
 
 def build_marker_positions(
@@ -196,11 +178,9 @@ def build_marker_positions(
             [float(matrix[2][0]), float(matrix[2][1]), float(matrix[2][2])],
         ]
         px, py, pz = apply_rotation(rotation, reference, convention)
-        px, py, pz = apply_rotation(rotation, reference)
         points.append((px + ox, py + oy, pz + oz))
 
     return points
-
 
 
 def escape_xml(value: str) -> str:
@@ -211,7 +191,6 @@ def escape_xml(value: str) -> str:
         .replace('"', "&quot;")
         .replace("'", "&apos;")
     )
-
 
 
 def to_cmm(marker_set_name: str, points: Sequence[Point3D]) -> str:
@@ -226,7 +205,6 @@ def to_cmm(marker_set_name: str, points: Sequence[Point3D]) -> str:
         )
     lines.append("</marker_set>")
     return "\n".join(lines) + "\n"
-
 
 
 def main() -> int:
@@ -246,11 +224,6 @@ def main() -> int:
     print(
         f"Wrote {len(points)} markers ({args.convention} convention) to {args.output}"
     )
-    points = build_marker_positions(sym_matrices, args.radius, args.origin)
-    cmm_text = to_cmm(args.set_name, points)
-    Path(args.output).write_text(cmm_text, encoding="utf-8")
-
-    print(f"Wrote {len(points)} markers to {args.output}")
     return 0
 
 
